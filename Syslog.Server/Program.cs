@@ -90,17 +90,20 @@ namespace Syslog.Server
                     // Receive the message
                     byte[] bytesReceive = udpListener.Receive(ref anyIP);
 
+                    DateTime now = DateTime.Now;
                     // push the message to the queue, and trigger the queue
-                    Data.Message msg = new Data.Message
+                    Message message = new Message
                     {
                         MessageText = Encoding.ASCII.GetString(bytesReceive),
-                        RecvTime = DateTime.Now,
-                        SourceIP = anyIP.Address
+                        RecvTime = now,
+                        SourceIP = anyIP.Address.ToString(),
+                        PartitionKey = anyIP.Address.ToString(),
+                        RowKey = Guid.NewGuid().ToString()
                     };
 
                     lock (messageQueue)
                     {
-                        messageQueue.Enqueue(msg);
+                        messageQueue.Enqueue(message);
                     }
 
                     messageTrigger.Set();
@@ -168,9 +171,10 @@ namespace Syslog.Server
         /// <param name="messages">Array of type <see cref="Data.Message"/></param>
         private static void HandleMessageProcessing(Data.Message[] messages)
         {
-            foreach (Data.Message message in messages)
+            foreach (Message message in messages)
             {
-                LogToFile(message.MessageText, message.SourceIP, message.RecvTime);
+                Log log = new Log();
+                log.WriteToLog(message);
                 Console.WriteLine(message.MessageText);
 
                 if (Program.messageQueue.Count != 0)
@@ -178,18 +182,6 @@ namespace Syslog.Server
                     Program.messageQueue.Dequeue();
                 }
             }
-        }
-
-        /// <summary>
-        /// handles the log Update, call in a new thread to reduce performance impacts on the service handling.
-        /// </summary>
-        /// <param name="msg">Message which was sent from the Syslog Client</param>
-        /// <param name="ipSourceAddress">Source IP of the Syslog Sender</param>
-        /// <param name="receiveTime">Receive Time of the Syslog Message</param>
-        private static void LogToFile(string msg, IPAddress ipSourceAddress, DateTime receiveTime)
-        {
-            Log log = new Log();
-            log.WriteToLog($"{msg}; {ipSourceAddress}; {receiveTime}\n", logFile);
         }
     }
 }

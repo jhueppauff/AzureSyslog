@@ -8,14 +8,41 @@
 
 namespace Syslog.Server.Data
 {
+    using Microsoft.WindowsAzure.Storage.Table;
     using System;
     using System.Net;
 
     /// <summary>
     /// Message Data
     /// </summary>
-    public class Message
+    public class Message : TableEntity
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Message"/> class.
+        /// </summary>
+        public Message()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Message"/> class.
+        /// </summary>
+        /// <param name="partitionKey">The partition key.</param>
+        /// <param name="rowKey">The row key.</param>
+        public Message(string partitionKey, string rowKey) : base(partitionKey, rowKey)
+        {
+        }
+
+        /// <summary>
+        /// Gets or sets the partition key.
+        /// </summary>
+        public string PartitionKey { get; set; }
+
+        /// <summary>
+        /// Gets or sets the row key.
+        /// </summary>
+        public String RowKey { get; set; }
+
         /// <summary>
         /// Gets or sets the Time on which the Syslog Message was receive
         /// </summary>
@@ -29,6 +56,6 @@ namespace Syslog.Server.Data
         /// <summary>
         /// Gets or sets the source IP of the Syslog Sender
         /// </summary>
-        public IPAddress SourceIP { get; set; }
+        public string SourceIP { get; set; }
     }
 }

@@ -8,8 +8,8 @@
 
 namespace Syslog.Server.Data
 {
-    using System.IO;
-    using System.Text;
+    using AzureStorageAdapter.Table;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Log Class
@@ -33,15 +33,14 @@ namespace Syslog.Server.Data
         /// </summary>
         /// <param name="message">The message to write.</param>
         /// <param name="path">The path of the file.</param>
-        public void WriteToLog(string message, string path)
+        public void WriteToLog(Message[] messages, string connectionString)
         {
             lock (Locker)
             {
-                using (FileStream fileStream = new FileStream(path: path, mode: FileMode.Append))
-                {
-                    byte[] encodedText = Encoding.Unicode.GetBytes(message);
-                    fileStream.Write(encodedText, 0, encodedText.Length);
-                }
+                TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(connectionString);
+
+                // ToDo dynamical name
+                tableStorageAdapter.InsertRecordToTable("logMessages", );
             }
         }
     }
