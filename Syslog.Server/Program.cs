@@ -173,8 +173,6 @@ namespace Syslog.Server
         {
             foreach (Message message in messages)
             {
-                Log log = new Log();
-                log.WriteToLog(message);
                 Console.WriteLine(message.MessageText);
 
                 if (Program.messageQueue.Count != 0)

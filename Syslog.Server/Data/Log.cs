@@ -40,7 +40,7 @@ namespace Syslog.Server.Data
                 TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(connectionString);
 
                 // ToDo dynamical name
-                tableStorageAdapter.InsertRecordToTable("logMessages", );
+                tableStorageAdapter.ExcuteBatchOperationToTable("logMessages", messages);
             }
         }
     }
