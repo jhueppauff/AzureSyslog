@@ -57,12 +57,15 @@ namespace Syslog.Server
         /// </summary>
         private bool disposedValue = false;
 
+        private static IConfiguration configuration;
+
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
         /// <param name="args">The arguments.</param>
         public static void Main(string[] args)
         {
+            configuration = GetConfiguration();
             if (args[0] != null)
             {
                 logFile = args[0];
@@ -113,6 +116,13 @@ namespace Syslog.Server
                     // ToDo: Add Error Handling
                 }
             }
+        }
+
+        private static IConfiguration GetConfiguration()
+        {
+            return new ConfigurationBuilder()
+                .SetBasePath(System.IO.Directory.GetParent(AppContext.BaseDirectory).FullName)
+                .AddJsonFile("testconfig.json", false).Build();
         }
 
         /// <summary>
@@ -172,7 +182,7 @@ namespace Syslog.Server
         private static void HandleMessageProcessing(Data.Message[] messages)
         {
             Log log = new Log();
-            log.WriteToLog(messages,);
+            log.WriteToLog(messages, configuration.GetSection("AzureStorage:StorageConnectionString").Value);
             foreach (Message message in messages)
             {
                 Console.WriteLine(message.MessageText);
