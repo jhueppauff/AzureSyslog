@@ -171,6 +171,8 @@ namespace Syslog.Server
         /// <param name="messages">Array of type <see cref="Data.Message"/></param>
         private static void HandleMessageProcessing(Data.Message[] messages)
         {
+            Log log = new Log();
+            log.WriteToLog(messages,);
             foreach (Message message in messages)
             {
                 Console.WriteLine(message.MessageText);
