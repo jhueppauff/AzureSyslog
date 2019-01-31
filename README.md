@@ -19,5 +19,14 @@ A simple .NET Core multi threaded syslog server, which saves syslog entries to A
 - Use the Visual Studio Publish function (right click on the project -> publish)
 
 ## How to run
-- Configure the AppSettings with your Storage Connection String
+- Create Azure Storage Account. See [Microsoft Docs](https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-portal)
+- Retrieve the Azure Storage Connection String from the Azure Resource
+- Add your Azure Storage Connection String to the appsettings.json
+```json
+{
+  "AzureStorage": {
+    "StorageConnectionString": ""
+  }
+}
+```
 - dotnet run Syslog.Server.dll
