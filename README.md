@@ -5,7 +5,7 @@ A simple .NET Core multi threaded syslog server, which saves syslog entries to A
 ## PreRequisite 
 
 ### Build
-- Visual Studio
+- Visual Studio, Visual Studio Code, or other .NET IDE's
 - DotNet Core 2.2
 - Open UDP Port 514 (syslog)
 
