@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Syslog.Server": {
-      "commandName": "Project",
-      "commandLineArgs": "\".\\syslog.txt\""
+      "commandName": "Project"
     }
   }
 }

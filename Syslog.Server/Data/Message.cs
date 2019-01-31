@@ -34,16 +34,6 @@ namespace Syslog.Server.Data
         }
 
         /// <summary>
-        /// Gets or sets the partition key.
-        /// </summary>
-        public string PartitionKey { get; set; }
-
-        /// <summary>
-        /// Gets or sets the row key.
-        /// </summary>
-        public String RowKey { get; set; }
-
-        /// <summary>
         /// Gets or sets the Time on which the Syslog Message was receive
         /// </summary>
         public DateTime RecvTime { get; set; }

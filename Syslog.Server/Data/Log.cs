@@ -10,6 +10,7 @@ namespace Syslog.Server.Data
 {
     using AzureStorageAdapter.Table;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Log Class
@@ -33,15 +34,13 @@ namespace Syslog.Server.Data
         /// </summary>
         /// <param name="message">The message to write.</param>
         /// <param name="path">The path of the file.</param>
-        public void WriteToLog(Message[] messages, string connectionString)
+        public async Task WriteToLog(Message[] messages, string connectionString)
         {
-            lock (Locker)
-            {
-                TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(connectionString);
+            TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(connectionString);
 
-                // ToDo dynamical name
-                tableStorageAdapter.ExcuteBatchOperationToTable("logMessages", messages);
-            }
+            // ToDo dynamical name
+            await tableStorageAdapter.ExcuteBatchOperationToTable("logMessages", messages).ConfigureAwait(false);
+
         }
     }
 }

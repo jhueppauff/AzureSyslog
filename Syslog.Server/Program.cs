@@ -14,6 +14,8 @@ namespace Syslog.Server
     using System.Net.Sockets;
     using System.Text;
     using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Configuration;
     using Syslog.Server.Data;
 
     /// <summary>
@@ -41,16 +43,11 @@ namespace Syslog.Server
         /// Listener Address
         /// </summary>
         private static IPEndPoint anyIP = new IPEndPoint(IPAddress.Any, 514);
-        
+
         /// <summary>
         /// Listener Port and Protocol
         /// </summary>
         private static UdpClient udpListener = new UdpClient(514);
-
-        /// <summary>
-        /// The log file
-        /// </summary>
-        private static string logFile;
 
         /// <summary>
         /// The disposed value
@@ -66,14 +63,6 @@ namespace Syslog.Server
         public static void Main(string[] args)
         {
             configuration = GetConfiguration();
-            if (args[0] != null)
-            {
-                logFile = args[0];
-            }
-            else
-            {
-                Console.WriteLine("Missing Argument (logfile)");
-            }
 
             // Main processing Thread
             Thread handler = new Thread(new ThreadStart(HandleMessage))
@@ -81,7 +70,7 @@ namespace Syslog.Server
                 IsBackground = true
             };
             handler.Start();
-          
+
             /* Main Loop */
             /* Listen for incoming data on udp port 514 (default for SysLog events) */
             while (queueing || messageQueue.Count != 0)
@@ -94,14 +83,13 @@ namespace Syslog.Server
                     byte[] bytesReceive = udpListener.Receive(ref anyIP);
 
                     DateTime now = DateTime.Now;
+
                     // push the message to the queue, and trigger the queue
-                    Message message = new Message
+                    Message message = new Message(anyIP.Address.ToString(), DateTime.Now.ToFileTimeUtc().ToString())
                     {
                         MessageText = Encoding.ASCII.GetString(bytesReceive),
                         RecvTime = now,
-                        SourceIP = anyIP.Address.ToString(),
-                        PartitionKey = anyIP.Address.ToString(),
-                        RowKey = Guid.NewGuid().ToString()
+                        SourceIP = anyIP.Address.ToString()
                     };
 
                     lock (messageQueue)
@@ -118,11 +106,17 @@ namespace Syslog.Server
             }
         }
 
+        /// <summary>
+        /// Gets the Configuration
+        /// </summary>
+        /// <returns></returns>
         private static IConfiguration GetConfiguration()
         {
             return new ConfigurationBuilder()
                 .SetBasePath(System.IO.Directory.GetParent(AppContext.BaseDirectory).FullName)
-                .AddJsonFile("testconfig.json", false).Build();
+                .AddJsonFile("appsettings.json", false)
+                .AddJsonFile($"appsettings.development.json", true)
+                .Build();
         }
 
         /// <summary>
@@ -159,7 +153,7 @@ namespace Syslog.Server
         {
             while (queueing)
             {
-                messageTrigger.WaitOne(5000);    // A 5000ms timeout to force processing
+                messageTrigger.WaitOne(10000);    // A 5000ms timeout to force processing
                 Message[] messageArray = null;
 
                 lock (messageQueue)
@@ -167,11 +161,10 @@ namespace Syslog.Server
                     messageArray = messageQueue.ToArray();
                 }
 
-                Thread messageprochandler = new Thread(() => HandleMessageProcessing(messageArray))
+                if (messageArray.Length != 0)
                 {
-                    IsBackground = true
-                };
-                messageprochandler.Start();
+                    Task.Run(() => HandleMessageProcessing(messageArray).Wait(2000));
+                }
             }
         }
 
@@ -179,10 +172,11 @@ namespace Syslog.Server
         /// Message Processing handler, call in a new thread
         /// </summary>
         /// <param name="messages">Array of type <see cref="Data.Message"/></param>
-        private static void HandleMessageProcessing(Data.Message[] messages)
+        private static async Task HandleMessageProcessing(Data.Message[] messages)
         {
             Log log = new Log();
-            log.WriteToLog(messages, configuration.GetSection("AzureStorage:StorageConnectionString").Value);
+            await log.WriteToLog(messages, configuration.GetSection("AzureStorage:StorageConnectionString").Value);
+
             foreach (Message message in messages)
             {
                 Console.WriteLine(message.MessageText);
