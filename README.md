@@ -20,4 +20,4 @@ A simple .NET Core multi threaded syslog server, which saves syslog entries to A
 
 ## How to run
 - Configure the AppSettings with your Storage Connection String
-- dotnet run [Name of the compiled dll]
+- dotnet run Syslog.Server.dll
