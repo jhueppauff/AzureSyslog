@@ -14,6 +14,8 @@ namespace Syslog.Server
     using System.Net.Sockets;
     using System.Text;
     using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Configuration;
     using Syslog.Server.Data;
 
     /// <summary>
@@ -41,21 +43,18 @@ namespace Syslog.Server
         /// Listener Address
         /// </summary>
         private static IPEndPoint anyIP = new IPEndPoint(IPAddress.Any, 514);
-        
+
         /// <summary>
         /// Listener Port and Protocol
         /// </summary>
         private static UdpClient udpListener = new UdpClient(514);
 
         /// <summary>
-        /// The log file
-        /// </summary>
-        private static string logFile;
-
-        /// <summary>
         /// The disposed value
         /// </summary>
         private bool disposedValue = false;
+
+        private static IConfiguration configuration;
 
         /// <summary>
         /// Defines the entry point of the application.
@@ -63,14 +62,7 @@ namespace Syslog.Server
         /// <param name="args">The arguments.</param>
         public static void Main(string[] args)
         {
-            if (args[0] != null)
-            {
-                logFile = args[0];
-            }
-            else
-            {
-                Console.WriteLine("Missing Argument (logfile)");
-            }
+            configuration = GetConfiguration();
 
             // Main processing Thread
             Thread handler = new Thread(new ThreadStart(HandleMessage))
@@ -78,7 +70,7 @@ namespace Syslog.Server
                 IsBackground = true
             };
             handler.Start();
-          
+
             /* Main Loop */
             /* Listen for incoming data on udp port 514 (default for SysLog events) */
             while (queueing || messageQueue.Count != 0)
@@ -90,17 +82,19 @@ namespace Syslog.Server
                     // Receive the message
                     byte[] bytesReceive = udpListener.Receive(ref anyIP);
 
+                    DateTime now = DateTime.Now;
+
                     // push the message to the queue, and trigger the queue
-                    Data.Message msg = new Data.Message
+                    Message message = new Message(anyIP.Address.ToString(), DateTime.Now.ToFileTimeUtc().ToString())
                     {
                         MessageText = Encoding.ASCII.GetString(bytesReceive),
-                        RecvTime = DateTime.Now,
-                        SourceIP = anyIP.Address
+                        RecvTime = now,
+                        SourceIP = anyIP.Address.ToString()
                     };
 
                     lock (messageQueue)
                     {
-                        messageQueue.Enqueue(msg);
+                        messageQueue.Enqueue(message);
                     }
 
                     messageTrigger.Set();
@@ -110,6 +104,19 @@ namespace Syslog.Server
                     // ToDo: Add Error Handling
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the Configuration
+        /// </summary>
+        /// <returns></returns>
+        private static IConfiguration GetConfiguration()
+        {
+            return new ConfigurationBuilder()
+                .SetBasePath(System.IO.Directory.GetParent(AppContext.BaseDirectory).FullName)
+                .AddJsonFile("appsettings.json", false)
+                .AddJsonFile($"appsettings.development.json", true)
+                .Build();
         }
 
         /// <summary>
@@ -146,7 +153,7 @@ namespace Syslog.Server
         {
             while (queueing)
             {
-                messageTrigger.WaitOne(5000);    // A 5000ms timeout to force processing
+                messageTrigger.WaitOne(10000);    // A 5000ms timeout to force processing
                 Message[] messageArray = null;
 
                 lock (messageQueue)
@@ -154,11 +161,10 @@ namespace Syslog.Server
                     messageArray = messageQueue.ToArray();
                 }
 
-                Thread messageprochandler = new Thread(() => HandleMessageProcessing(messageArray))
+                if (messageArray.Length != 0)
                 {
-                    IsBackground = true
-                };
-                messageprochandler.Start();
+                    Task.Run(() => HandleMessageProcessing(messageArray).Wait(2000));
+                }
             }
         }
 
@@ -166,11 +172,13 @@ namespace Syslog.Server
         /// Message Processing handler, call in a new thread
         /// </summary>
         /// <param name="messages">Array of type <see cref="Data.Message"/></param>
-        private static void HandleMessageProcessing(Data.Message[] messages)
+        private static async Task HandleMessageProcessing(Data.Message[] messages)
         {
-            foreach (Data.Message message in messages)
+            Log log = new Log();
+            await log.WriteToLog(messages, configuration.GetSection("AzureStorage:StorageConnectionString").Value);
+
+            foreach (Message message in messages)
             {
-                LogToFile(message.MessageText, message.SourceIP, message.RecvTime);
                 Console.WriteLine(message.MessageText);
 
                 if (Program.messageQueue.Count != 0)
@@ -178,18 +186,6 @@ namespace Syslog.Server
                     Program.messageQueue.Dequeue();
                 }
             }
-        }
-
-        /// <summary>
-        /// handles the log Update, call in a new thread to reduce performance impacts on the service handling.
-        /// </summary>
-        /// <param name="msg">Message which was sent from the Syslog Client</param>
-        /// <param name="ipSourceAddress">Source IP of the Syslog Sender</param>
-        /// <param name="receiveTime">Receive Time of the Syslog Message</param>
-        private static void LogToFile(string msg, IPAddress ipSourceAddress, DateTime receiveTime)
-        {
-            Log log = new Log();
-            log.WriteToLog($"{msg}; {ipSourceAddress}; {receiveTime}\n", logFile);
         }
     }
 }
