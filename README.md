@@ -1,16 +1,16 @@
 # Syslog.Server
 
-A simple .NET Core multi threaded syslog server, which saves syslog entries to Azure
+A simple .NET Core multi threaded syslog server, which saves syslog entries to Azure Table Storage
 
 ## PreRequisite 
 
 ### Build
 - Visual Studio
-- DotNet Core 2.1
+- DotNet Core 2.2
 - Open UDP Port 514 (syslog)
 
 ### Run
-- DotNet Core 2.1
+- DotNet Core 2.2
 - Open UDP Port 514 (syslog)
 - Configure the AppSettings with your Storage Connection String
 
