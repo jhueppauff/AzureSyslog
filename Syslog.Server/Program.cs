@@ -85,7 +85,7 @@ namespace Syslog.Server
                     DateTime now = DateTime.Now;
 
                     // push the message to the queue, and trigger the queue
-                    Message message = new Message(anyIP.Address.ToString(), DateTime.Now.ToFileTimeUtc().ToString())
+                    Message message = new Message($"{DateTime.Now.Year}{DateTime.Now.Month}{DateTime.Now.Day}", DateTime.Now.ToFileTimeUtc().ToString())
                     {
                         MessageText = Encoding.ASCII.GetString(bytesReceive),
                         RecvTime = now,
