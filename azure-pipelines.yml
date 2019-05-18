@@ -19,7 +19,6 @@ steps:
   inputs:
     version: '2.2.0' # replace this value with the version that you need for your project
 
-steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: restore
@@ -27,7 +26,6 @@ steps:
     feedsToUse: config
     nugetConfigPath: NuGet.config    # Relative to root of the repository
 
-steps:
 - task: DotNetCoreCLI@2
   displayName: Build
   inputs:
