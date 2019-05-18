@@ -48,6 +48,14 @@ steps:
     Contents: '**\bin\$(BuildConfiguration)\**'
     TargetFolder: '$(build.artifactstagingdirectory)'
     
+    
+- task: ArchiveFiles@2
+  displayName: 'Archive Downloader'
+  inputs:
+    rootFolderOrFile: '$(build.artifactstagingdirectory)\Syslog.Server\bin\$(BuildConfiguration)\netcoreapp2.2\'
+    includeRootFolder: false
+    archiveFile: '$(build.artifactstagingdirectory)\SyslogServer.zip'
+    
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop'
   inputs:
