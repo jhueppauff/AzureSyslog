@@ -15,19 +15,49 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- task: NuGetToolInstaller@0
-
-- task: NuGetCommand@2
+- task: DotNetCoreInstaller@0
   inputs:
-    restoreSolution: '$(solution)'
+    version: '2.2.105' # replace this value with the version that you need for your project
+    
+- script: dotnet restore
 
-- task: VSBuild@1
+- task: DotNetCoreCLI@2
+  displayName: Build
   inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    command: build
+    projects: '**/*.csproj'
+    arguments: '--configuration Release'
+    
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: '**/*Tests/*.csproj'
+    arguments: '--configuration $(buildConfiguration)'
+    
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: '**/*Tests/*.csproj'
+    arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
 
-- task: VSTest@2
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    SourceFolder: '$(system.defaultworkingdirectory)'
+    Contents: '**\bin\$(BuildConfiguration)\**'
+    TargetFolder: '$(build.artifactstagingdirectory)'
+    
+    
+- task: ArchiveFiles@2
+  displayName: 'Archive Downloader'
+  inputs:
+    rootFolderOrFile: '$(build.artifactstagingdirectory)\Syslog.Server\bin\$(BuildConfiguration)\netcoreapp2.2\'
+    includeRootFolder: false
+    archiveFile: '$(build.artifactstagingdirectory)\SyslogServer.zip'
+    
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)'
+
