@@ -62,6 +62,10 @@ namespace Syslog.Server
         /// <param name="args">The arguments.</param>
         public static void Main(string[] args)
         {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Syslog Server started");
+            Console.ResetColor();
+
             configuration = GetConfiguration();
 
             // Main processing Thread
@@ -94,7 +98,14 @@ namespace Syslog.Server
 
                     lock (messageQueue)
                     {
-                        messageQueue.Enqueue(message);
+                        try
+                        {
+                            messageQueue.Enqueue(message);
+                        }
+                        catch (OutOfMemoryException)
+                        {
+                            Console.WriteLine("Out of memory Exception occured. Dropping incoming message");
+                        }
                     }
 
                     messageTrigger.Set();
