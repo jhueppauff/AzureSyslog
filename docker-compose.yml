@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Syslog.Server/Dockerfile
     ports:
-      target: 514
-      published: 514
-      protocol: udp
-      mode: host
+      - target: 514
+        published: 514
+        protocol: udp
+        mode: host

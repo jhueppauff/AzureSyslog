@@ -16,4 +16,4 @@ RUN dotnet publish "Syslog.Server.csproj" -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
-ENTRYPOINT ["dotnet", "Syslog.Server.dll","--AzureStorage_StorageConnectionString=[your key]"]
+ENTRYPOINT ["dotnet", "Syslog.Server.dll","--AzureStorage_StorageConnectionString=[your connection string]"]
