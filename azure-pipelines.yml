@@ -13,31 +13,32 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
+  projectName: Syslog.Server.csproj
 
 steps:
 - task: DotNetCoreInstaller@0
   inputs:
     version: '2.2.105' # replace this value with the version that you need for your project
     
-- script: dotnet restore
+- script: dotnet restore $(projectName)
 
 - task: DotNetCoreCLI@2
   displayName: Build
   inputs:
     command: build
-    projects: '**/*.csproj'
+    projects: '**/$(projectName)'
     arguments: '--configuration Release'
     
 - task: DotNetCoreCLI@2
   inputs:
     command: test
-    projects: '**/*Tests/*.csproj'
+    projects: '**/*Tests/$(projectName)'
     arguments: '--configuration $(buildConfiguration)'
     
 - task: DotNetCoreCLI@2
   inputs:
     command: test
-    projects: '**/*Tests/*.csproj'
+    projects: '**/*Tests/$(projectName)'
     arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
 
 
