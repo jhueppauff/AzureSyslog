@@ -17,6 +17,7 @@ namespace Syslog.Server
     using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
     using Syslog.Server.Data;
+    using Syslog.Shared.Model;
 
     /// <summary>
     /// Program class
@@ -183,7 +184,7 @@ namespace Syslog.Server
         /// Message Processing handler, call in a new thread
         /// </summary>
         /// <param name="messages">Array of type <see cref="Data.Message"/></param>
-        private static async Task HandleMessageProcessing(Data.Message[] messages)
+        private static async Task HandleMessageProcessing(Message[] messages)
         {
             Log log = new Log();
             await log.WriteToLog(messages, configuration.GetSection("AzureStorage:StorageConnectionString").Value);

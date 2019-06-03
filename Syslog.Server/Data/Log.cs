@@ -9,8 +9,8 @@
 namespace Syslog.Server.Data
 {
     using AzureStorageAdapter.Table;
+    using Syslog.Shared.Model;
     using System;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -41,7 +41,7 @@ namespace Syslog.Server.Data
                     // ToDo dynamical name
                     await tableStorageAdapter.ExcuteBatchOperationToTable("logMessages", messages).ConfigureAwait(false);
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine("An error occured: " + ex.Message);
                 }
