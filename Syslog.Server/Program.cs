@@ -33,12 +33,12 @@ namespace Syslog.Server
         /// <summary>
         /// Message Queue of the type Data.Message.
         /// </summary>
-        private static Queue<Message> messageQueue = new Queue<Message>();
+        private static readonly Queue<Message> messageQueue = new Queue<Message>();
 
         /// <summary>
         /// Message Trigger
         /// </summary>
-        private static AutoResetEvent messageTrigger = new AutoResetEvent(false);
+        private static readonly AutoResetEvent messageTrigger = new AutoResetEvent(false);
 
         /// <summary>
         /// Listener Address
@@ -48,7 +48,7 @@ namespace Syslog.Server
         /// <summary>
         /// Listener Port and Protocol
         /// </summary>
-        private static UdpClient udpListener = new UdpClient(514);
+        private static readonly UdpClient udpListener = new UdpClient(514);
 
         /// <summary>
         /// The disposed value
@@ -60,8 +60,7 @@ namespace Syslog.Server
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
-        /// <param name="args">The arguments.</param>
-        public static void Main(string[] args)
+        public static void Main()
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Syslog Server started");
