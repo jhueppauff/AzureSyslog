@@ -2,9 +2,6 @@
   "profiles": {
     "Syslog.Server": {
       "commandName": "Project"
-    },
-    "Docker": {
-      "commandName": "Docker"
     }
   }
 }

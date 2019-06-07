@@ -17,7 +17,6 @@ namespace Syslog.Server
     using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
     using Syslog.Server.Data;
-    using Syslog.Shared.Model;
 
     /// <summary>
     /// Program class
@@ -33,12 +32,12 @@ namespace Syslog.Server
         /// <summary>
         /// Message Queue of the type Data.Message.
         /// </summary>
-        private static readonly Queue<Message> messageQueue = new Queue<Message>();
+        private static Queue<Message> messageQueue = new Queue<Message>();
 
         /// <summary>
         /// Message Trigger
         /// </summary>
-        private static readonly AutoResetEvent messageTrigger = new AutoResetEvent(false);
+        private static AutoResetEvent messageTrigger = new AutoResetEvent(false);
 
         /// <summary>
         /// Listener Address
@@ -48,7 +47,7 @@ namespace Syslog.Server
         /// <summary>
         /// Listener Port and Protocol
         /// </summary>
-        private static readonly UdpClient udpListener = new UdpClient(514);
+        private static UdpClient udpListener = new UdpClient(514);
 
         /// <summary>
         /// The disposed value
@@ -60,12 +59,9 @@ namespace Syslog.Server
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
-        public static void Main()
+        /// <param name="args">The arguments.</param>
+        public static void Main(string[] args)
         {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Syslog Server started");
-            Console.ResetColor();
-
             configuration = GetConfiguration();
 
             // Main processing Thread
@@ -89,7 +85,7 @@ namespace Syslog.Server
                     DateTime now = DateTime.Now;
 
                     // push the message to the queue, and trigger the queue
-                    Message message = new Message($"{DateTime.Now.Year}{DateTime.Now.Month}{DateTime.Now.Day}", DateTime.Now.ToFileTimeUtc().ToString())
+                    Message message = new Message(anyIP.Address.ToString(), DateTime.Now.ToFileTimeUtc().ToString())
                     {
                         MessageText = Encoding.ASCII.GetString(bytesReceive),
                         RecvTime = now,
@@ -98,14 +94,7 @@ namespace Syslog.Server
 
                     lock (messageQueue)
                     {
-                        try
-                        {
-                            messageQueue.Enqueue(message);
-                        }
-                        catch (OutOfMemoryException)
-                        {
-                            Console.WriteLine("Out of memory Exception occured. Dropping incoming message");
-                        }
+                        messageQueue.Enqueue(message);
                     }
 
                     messageTrigger.Set();
@@ -183,7 +172,7 @@ namespace Syslog.Server
         /// Message Processing handler, call in a new thread
         /// </summary>
         /// <param name="messages">Array of type <see cref="Data.Message"/></param>
-        private static async Task HandleMessageProcessing(Message[] messages)
+        private static async Task HandleMessageProcessing(Data.Message[] messages)
         {
             Log log = new Log();
             await log.WriteToLog(messages, configuration.GetSection("AzureStorage:StorageConnectionString").Value);

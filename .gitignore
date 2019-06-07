@@ -260,4 +260,5 @@ paket-files/
 __pycache__/
 *.pyc
 
-*.development.json
+# Development Settings
+*.Development.json

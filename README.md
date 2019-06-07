@@ -29,4 +29,4 @@ A simple .NET Core multi threaded syslog server, which saves syslog entries to A
   }
 }
 ```
-- dotnet Syslog.Server.dll
+- dotnet run Syslog.Server.dll
