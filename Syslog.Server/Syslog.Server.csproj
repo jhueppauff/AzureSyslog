@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="Syslog.Shared\Syslog.Shared.csproj" />
+    <ProjectReference Include="..\Syslog.Shared\Syslog.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
