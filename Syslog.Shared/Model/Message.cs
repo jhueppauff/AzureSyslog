@@ -6,11 +6,10 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Syslog.Server.Data
+namespace Syslog.Shared.Model
 {
     using Microsoft.WindowsAzure.Storage.Table;
     using System;
-    using System.Net;
 
     /// <summary>
     /// Message Data

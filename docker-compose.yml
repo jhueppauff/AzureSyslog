@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  syslog.server:
+    image: ${DOCKER_REGISTRY-}syslogserver
+    build:
+      context: .
+      dockerfile: Syslog.Server/Dockerfile
+    ports:
+      - target: 514
+        published: 514
+        protocol: udp
+        mode: host

@@ -1,0 +1,65 @@
+# .NET Desktop
+# Build and run tests for .NET Desktop or Windows classic desktop solutions.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
+
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  projectName: Syslog.Server.csproj
+  folderName: Syslog.Server
+
+steps:
+- task: DotNetCoreInstaller@0
+  inputs:
+    version: '2.2.105' # replace this value with the version that you need for your project
+    
+- script: dotnet restore $(folderName)/$(projectName)
+
+- task: DotNetCoreCLI@2
+  displayName: Build
+  inputs:
+    command: build
+    projects: '**/$(projectName)'
+    arguments: '--configuration Release'
+    
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: '**/*Tests/$(projectName)'
+    arguments: '--configuration $(buildConfiguration)'
+    
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: '**/*Tests/$(projectName)'
+    arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
+
+
+- task: CopyFiles@2
+  displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+  inputs:
+    SourceFolder: '$(system.defaultworkingdirectory)'
+    Contents: '**\bin\$(BuildConfiguration)\**'
+    TargetFolder: '$(build.artifactstagingdirectory)'
+    
+    
+- task: ArchiveFiles@2
+  displayName: 'Archive Downloader'
+  inputs:
+    rootFolderOrFile: '$(build.artifactstagingdirectory)\$(folderName)/\bin\$(BuildConfiguration)\netcoreapp2.2\'
+    includeRootFolder: false
+    archiveFile: '$(build.artifactstagingdirectory)\SyslogServer.zip'
+    
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)'
+
