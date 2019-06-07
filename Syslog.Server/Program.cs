@@ -17,6 +17,7 @@ namespace Syslog.Server
     using System.Threading.Tasks;
     using Microsoft.Extensions.Configuration;
     using Syslog.Server.Data;
+    using Syslog.Shared.Model;
 
     /// <summary>
     /// Program class
@@ -32,12 +33,12 @@ namespace Syslog.Server
         /// <summary>
         /// Message Queue of the type Data.Message.
         /// </summary>
-        private static Queue<Message> messageQueue = new Queue<Message>();
+        private static readonly Queue<Message> messageQueue = new Queue<Message>();
 
         /// <summary>
         /// Message Trigger
         /// </summary>
-        private static AutoResetEvent messageTrigger = new AutoResetEvent(false);
+        private static readonly AutoResetEvent messageTrigger = new AutoResetEvent(false);
 
         /// <summary>
         /// Listener Address
@@ -47,7 +48,7 @@ namespace Syslog.Server
         /// <summary>
         /// Listener Port and Protocol
         /// </summary>
-        private static UdpClient udpListener = new UdpClient(514);
+        private static readonly UdpClient udpListener = new UdpClient(514);
 
         /// <summary>
         /// The disposed value
@@ -59,8 +60,7 @@ namespace Syslog.Server
         /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
-        /// <param name="args">The arguments.</param>
-        public static void Main(string[] args)
+        public static void Main()
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Syslog Server started");
@@ -183,7 +183,7 @@ namespace Syslog.Server
         /// Message Processing handler, call in a new thread
         /// </summary>
         /// <param name="messages">Array of type <see cref="Data.Message"/></param>
-        private static async Task HandleMessageProcessing(Data.Message[] messages)
+        private static async Task HandleMessageProcessing(Message[] messages)
         {
             Log log = new Log();
             await log.WriteToLog(messages, configuration.GetSection("AzureStorage:StorageConnectionString").Value);
