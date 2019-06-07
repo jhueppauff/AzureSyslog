@@ -9,7 +9,8 @@
 namespace Syslog.Server.Data
 {
     using AzureStorageAdapter.Table;
-    using System.Collections.Generic;
+    using Syslog.Shared.Model;
+    using System;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -17,11 +18,6 @@ namespace Syslog.Server.Data
     /// </summary>
     public class Log
     {
-        /// <summary>
-        /// Lock object to log file access
-        /// </summary>
-        private static readonly object Locker = new object();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="Log"/> class.
         /// </summary>
@@ -38,9 +34,18 @@ namespace Syslog.Server.Data
         {
             TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(connectionString);
 
-            // ToDo dynamical name
-            await tableStorageAdapter.ExcuteBatchOperationToTable("logMessages", messages).ConfigureAwait(false);
-
+            if (messages.Length != 0)
+            {
+                try
+                {
+                    // ToDo dynamical name
+                    await tableStorageAdapter.ExcuteBatchOperationToTable("logMessages", messages).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("An error occured: " + ex.Message);
+                }
+            }
         }
     }
 }
