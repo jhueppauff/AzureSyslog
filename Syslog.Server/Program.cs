@@ -19,6 +19,10 @@ namespace Syslog.Server
     using Syslog.Server.Data;
     using Syslog.Shared.Model;
     using Model.Configuration;
+    using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.ApplicationInsights.DependencyCollector;
+    using Microsoft.ApplicationInsights;
+    using Microsoft.ApplicationInsights.DataContracts;
 
     /// <summary>
     /// Program class
@@ -61,6 +65,11 @@ namespace Syslog.Server
         private static List<StorageEndpointConfiguration> storageEndpointConfigurations;
 
         /// <summary>
+        /// Application Insights Telemetry Client
+        /// </summary>
+        public static TelemetryClient telemetryClient;
+
+        /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
         public static void Main()
@@ -71,6 +80,11 @@ namespace Syslog.Server
 
             configuration = GetConfiguration();
             storageEndpointConfigurations = GetStorageConfig();
+
+            if (configuration["ApplicationInsights:InstrumentationKey"] != null)
+            {
+                ConfigureApplicationInsights();
+            }
 
             // Main processing Thread
             Thread handler = new Thread(new ThreadStart(HandleMessage))
@@ -114,9 +128,9 @@ namespace Syslog.Server
 
                     messageTrigger.Set();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // ToDo: Add Error Handling
+                    telemetryClient.TrackException(ex);
                 }
             }
         }
@@ -180,6 +194,10 @@ namespace Syslog.Server
                     udpListener.Dispose();
                 }
 
+                telemetryClient.Flush();
+                // flush is not blocking so wait a bit
+                Task.Delay(5000).Wait();
+
                 this.disposedValue = true;
             }
         }
@@ -232,12 +250,31 @@ namespace Syslog.Server
                 {
                     Console.WriteLine($"{DateTime.Now} : Processed {messages.Length} messages");
                 }
+
+                var metric = new Dictionary<string, double>();
+                metric.Add("Processed Messages", messages.Length);
+
+                telemetryClient.TrackEvent("MessagesProcessed", null, metric);
                 
                 if (Program.messageQueue.Count != 0)
                 {
                     Program.messageQueue.Dequeue();
                 }
             }
+        }
+
+        /// <summary>
+        /// Configures Application Insights
+        /// </summary>
+        private static void ConfigureApplicationInsights()
+        {
+            TelemetryConfiguration configuration = TelemetryConfiguration.Active;
+
+            configuration.InstrumentationKey = Program.configuration["ApplicationInsights:InstrumentationKey"];
+            configuration.TelemetryInitializers.Add(new OperationCorrelationTelemetryInitializer());
+            configuration.TelemetryInitializers.Add(new HttpDependenciesParsingTelemetryInitializer());
+
+            telemetryClient = new TelemetryClient();
         }
     }
 }

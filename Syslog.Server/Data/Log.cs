@@ -93,6 +93,7 @@ namespace Syslog.Server.Data
                 }
                 catch (Exception ex)
                 {
+                    Program.telemetryClient.TrackException(ex);
                     Console.WriteLine("An error occured: " + ex.Message);
                 }
             }
