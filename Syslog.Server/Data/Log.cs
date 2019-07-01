@@ -25,7 +25,7 @@ namespace Syslog.Server.Data
     /// </summary>
     public class Log
     {
-        private List<StorageEndpointConfiguration> Configuration { get; set; }
+        private readonly List<StorageEndpointConfiguration> configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Log"/> class.
@@ -33,7 +33,7 @@ namespace Syslog.Server.Data
         /// <param name="configuration">Inject the <see cref="IConfiguration"/> class.</param>
         public Log(List<StorageEndpointConfiguration> configuration)
         {
-            this.Configuration = configuration;
+            this.configuration = configuration;
         }
 
         /// <summary>
@@ -47,16 +47,18 @@ namespace Syslog.Server.Data
             {
                 try
                 {
-                    foreach (StorageEndpointConfiguration configItem in Configuration)
+                    foreach (StorageEndpointConfiguration configItem in configuration)
                     {
                         switch (configItem.ConnectionType)
                         {
                             case "TableStorage":
                                 TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(configItem.ConnectionString);
+
                                 await tableStorageAdapter.ExcuteBatchOperationToTable(configItem.Name, messages).ConfigureAwait(false);
                                 break;
                             case "ServiceBus":
                                 QueueClient queueClient = new QueueClient(configItem.ConnectionString, configItem.Name);
+
                                 List<Microsoft.Azure.ServiceBus.Message> serviceBusMessages = new List<Microsoft.Azure.ServiceBus.Message>();
 
                                 foreach (Syslog.Shared.Model.Message logMessage in messages)
@@ -64,7 +66,7 @@ namespace Syslog.Server.Data
                                     Microsoft.Azure.ServiceBus.Message serviceBusMessage = new Microsoft.Azure.ServiceBus.Message()
                                     {
                                         Body = Encoding.UTF8.GetBytes(logMessage.MessageText),
-                                        MessageId = logMessage.RowKey, 
+                                        MessageId = logMessage.RowKey,
                                         PartitionKey = logMessage.PartitionKey,
                                     };
 
