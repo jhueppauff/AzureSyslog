@@ -224,8 +224,15 @@ namespace Syslog.Server
 
             foreach (Message message in messages)
             {
-                Console.WriteLine(message.MessageText);
-
+                if (!Convert.ToBoolean(configuration["DisableConsoleOutput"]))
+                {
+                    Console.WriteLine($"{DateTime.Now} : {message.MessageText}");
+                }
+                else
+                {
+                    Console.WriteLine($"{DateTime.Now} : Processed {messages.Length} messages");
+                }
+                
                 if (Program.messageQueue.Count != 0)
                 {
                     Program.messageQueue.Dequeue();
