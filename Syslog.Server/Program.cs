@@ -130,7 +130,10 @@ namespace Syslog.Server
                 }
                 catch (Exception ex)
                 {
-                    telemetryClient.TrackException(ex);
+                    if (telemetryClient != null)
+                    {
+                        telemetryClient.TrackException(ex);
+                    }
                 }
             }
         }
@@ -194,9 +197,12 @@ namespace Syslog.Server
                     udpListener.Dispose();
                 }
 
-                telemetryClient.Flush();
-                // flush is not blocking so wait a bit
-                Task.Delay(5000).Wait();
+                if (telemetryClient != null)
+                {
+                    telemetryClient.Flush();
+                    // flush is not blocking so wait a bit
+                    Task.Delay(5000).Wait();
+                }
 
                 this.disposedValue = true;
             }
@@ -251,13 +257,16 @@ namespace Syslog.Server
                     Console.WriteLine($"{DateTime.Now} : Processed {messages.Length} messages");
                 }
 
-                var metric = new Dictionary<string, double>
+                if (telemetryClient != null)
                 {
-                    { "Processed Messages", messages.Length }
-                };
+                    var metric = new Dictionary<string, double>
+                    {
+                        { "Processed Messages", messages.Length }
+                    };
 
-                telemetryClient.TrackEvent("MessagesProcessed", null, metric);
-                
+                    telemetryClient.TrackEvent("MessagesProcessed", null, metric);
+                }
+
                 if (Program.messageQueue.Count != 0)
                 {
                     Program.messageQueue.Dequeue();
