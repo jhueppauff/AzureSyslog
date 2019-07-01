@@ -251,8 +251,10 @@ namespace Syslog.Server
                     Console.WriteLine($"{DateTime.Now} : Processed {messages.Length} messages");
                 }
 
-                var metric = new Dictionary<string, double>();
-                metric.Add("Processed Messages", messages.Length);
+                var metric = new Dictionary<string, double>
+                {
+                    { "Processed Messages", messages.Length }
+                };
 
                 telemetryClient.TrackEvent("MessagesProcessed", null, metric);
                 
