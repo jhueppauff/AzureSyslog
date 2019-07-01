@@ -218,7 +218,7 @@ namespace Syslog.Server
                 messageTrigger.WaitOne(10000);    // A 10000ms timeout to force processing
                 Message[] messageArray = null;
 
-                if (messageQueue.Count != 0)
+                if (messageQueue.Count != 0 && messageQueue.Count > 0)
                 {
                     lock (messageQueue)
                     {
@@ -251,10 +251,6 @@ namespace Syslog.Server
                 if (!Convert.ToBoolean(configuration["DisableConsoleOutput"]))
                 {
                     Console.WriteLine($"{DateTime.Now} : {message.MessageText}");
-                }
-                else
-                {
-                    Console.WriteLine($"{DateTime.Now} : Processed {messages.Length} messages");
                 }
 
                 if (telemetryClient != null)
