@@ -1,4 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿//-----------------------------------------------------------------------
+// <copyright file="StorageEndpointConfiguration.cs" company="https://github.com/jhueppauff/Syslog.Server">
+// Copyright 2018 Jhueppauff
+// MIT License
+// For licence details visit https://github.com/jhueppauff/Syslog.Server/blob/master/LICENSE
+// </copyright>
+//-----------------------------------------------------------------------
+
+
+using Newtonsoft.Json;
 
 namespace Syslog.Server.Model.Configuration
 {
