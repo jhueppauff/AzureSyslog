@@ -12,9 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{6BC35BDF-6341-4E27-92F2-1E6D6597F3AB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Syslog.API", "..\Syslog.API\Syslog.API.csproj", "{C4D355BA-F7A3-436A-804E-8EDE3ED33CED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Syslog.API", "Syslog.API\Syslog.API.csproj", "{C4D355BA-F7A3-436A-804E-8EDE3ED33CED}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Syslog.Shared", "..\Syslog.Shared\Syslog.Shared.csproj", "{B0B67C56-50D0-4F4A-A467-427B93B98AF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Syslog.Shared", "Syslog.Shared\Syslog.Shared.csproj", "{B0B67C56-50D0-4F4A-A467-427B93B98AF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
