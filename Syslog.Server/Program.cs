@@ -55,6 +55,7 @@ namespace Syslog.Server
         /// The disposed value
         /// </summary>
         private bool disposedValue = false;
+        private static Log log;
 
         private static IConfiguration configuration;
         private static List<StorageEndpointConfiguration> storageEndpointConfigurations;
@@ -190,17 +191,20 @@ namespace Syslog.Server
         {
             while (queueing)
             {
-                messageTrigger.WaitOne(10000);    // A 5000ms timeout to force processing
+                messageTrigger.WaitOne(10000);    // A 10000ms timeout to force processing
                 Message[] messageArray = null;
 
-                lock (messageQueue)
+                if (messageQueue.Count != 0)
                 {
-                    messageArray = messageQueue.ToArray();
-                }
+                    lock (messageQueue)
+                    {
+                        messageArray = messageQueue.ToArray();
+                    }
 
-                if (messageArray.Length != 0)
-                {
-                    Task.Run(() => HandleMessageProcessing(messageArray).Wait(2000));
+                    if (messageArray.Length != 0)
+                    {
+                        Task.Run(() => HandleMessageProcessing(messageArray).Wait(6000));
+                    }
                 }
             }
         }
@@ -211,7 +215,11 @@ namespace Syslog.Server
         /// <param name="messages">Array of type <see cref="Data.Message"/></param>
         private static async Task HandleMessageProcessing(Message[] messages)
         {
-            Log log = new Log(storageEndpointConfigurations);
+            if (log is null)
+            {
+                log = new Log(storageEndpointConfigurations);
+            }
+
             await log.WriteToLog(messages);
 
             foreach (Message message in messages)
