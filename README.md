@@ -24,6 +24,7 @@ There are 3 Options to save the Messages to.
 - Azure Storage Account
 - Azure Service Bus
 - Local FileSystem (JSON File, not intended for production use)
+- You can disable output actions by setting the config value "Enabled" to false
 
 ### Azure Storage Account
 
