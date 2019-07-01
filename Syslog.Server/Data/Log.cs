@@ -9,8 +9,15 @@
 namespace Syslog.Server.Data
 {
     using AzureStorageAdapter.Table;
+    using Microsoft.Azure.ServiceBus;
+    using Microsoft.Extensions.Configuration;
+    using Newtonsoft.Json;
+    using Syslog.Server.Model.Configuration;
     using Syslog.Shared.Model;
     using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Text;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -18,11 +25,15 @@ namespace Syslog.Server.Data
     /// </summary>
     public class Log
     {
+        private readonly List<StorageEndpointConfiguration> configuration;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Log"/> class.
         /// </summary>
-        public Log()
+        /// <param name="configuration">Inject the <see cref="IConfiguration"/> class.</param>
+        public Log(List<StorageEndpointConfiguration> configuration)
         {
+            this.configuration = configuration;
         }
 
         /// <summary>
@@ -30,16 +41,56 @@ namespace Syslog.Server.Data
         /// </summary>
         /// <param name="message">The message to write.</param>
         /// <param name="path">The path of the file.</param>
-        public async Task WriteToLog(Message[] messages, string connectionString)
+        public async Task WriteToLog(Syslog.Shared.Model.Message[] messages)
         {
-            TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(connectionString);
-
             if (messages.Length != 0)
             {
                 try
                 {
-                    // ToDo dynamical name
-                    await tableStorageAdapter.ExcuteBatchOperationToTable("logMessages", messages).ConfigureAwait(false);
+                    foreach (StorageEndpointConfiguration configItem in configuration)
+                    {
+                        switch (configItem.ConnectionType)
+                        {
+                            case "TableStorage":
+                                TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(configItem.ConnectionString);
+
+                                await tableStorageAdapter.ExcuteBatchOperationToTable(configItem.Name, messages).ConfigureAwait(false);
+                                break;
+                            case "ServiceBus":
+                                QueueClient queueClient = new QueueClient(configItem.ConnectionString, configItem.Name);
+
+                                List<Microsoft.Azure.ServiceBus.Message> serviceBusMessages = new List<Microsoft.Azure.ServiceBus.Message>();
+
+                                foreach (Syslog.Shared.Model.Message logMessage in messages)
+                                {
+                                    Microsoft.Azure.ServiceBus.Message serviceBusMessage = new Microsoft.Azure.ServiceBus.Message()
+                                    {
+                                        Body = Encoding.UTF8.GetBytes(logMessage.MessageText),
+                                        MessageId = logMessage.RowKey,
+                                        PartitionKey = logMessage.PartitionKey,
+                                    };
+
+                                    serviceBusMessage.UserProperties.Add("SourceIP", logMessage.SourceIP);
+                                    serviceBusMessage.UserProperties.Add("RecvTime", logMessage.RecvTime);
+
+                                    serviceBusMessages.Add(serviceBusMessage);
+                                }
+
+                                await queueClient.SendAsync(serviceBusMessages);
+                                break;
+                            case "LocalFile":
+                                foreach (var item in messages)
+                                {
+                                    await File.AppendAllTextAsync(configItem.ConnectionString, JsonConvert.SerializeObject(messages));
+                                }
+                                break;
+                            default:
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine($"Unknow output type: {configItem.ConnectionType}. Check your appsettings");
+                                Console.ResetColor();
+                                break;
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

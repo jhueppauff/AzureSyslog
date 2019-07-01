@@ -18,6 +18,7 @@ namespace Syslog.Server
     using Microsoft.Extensions.Configuration;
     using Syslog.Server.Data;
     using Syslog.Shared.Model;
+    using Model.Configuration;
 
     /// <summary>
     /// Program class
@@ -54,8 +55,10 @@ namespace Syslog.Server
         /// The disposed value
         /// </summary>
         private bool disposedValue = false;
+        private static Log log;
 
         private static IConfiguration configuration;
+        private static List<StorageEndpointConfiguration> storageEndpointConfigurations;
 
         /// <summary>
         /// Defines the entry point of the application.
@@ -67,6 +70,7 @@ namespace Syslog.Server
             Console.ResetColor();
 
             configuration = GetConfiguration();
+            storageEndpointConfigurations = GetStorageConfig();
 
             // Main processing Thread
             Thread handler = new Thread(new ThreadStart(HandleMessage))
@@ -130,6 +134,29 @@ namespace Syslog.Server
                 .Build();
         }
 
+        private static List<StorageEndpointConfiguration> GetStorageConfig()
+        {
+            List<StorageEndpointConfiguration> endpointConfiguration = new List<StorageEndpointConfiguration>();
+
+            var rootSection = configuration.GetSection("StorageEndpointConfiguration").GetChildren();
+
+            foreach (var rootItem in rootSection)
+            {
+                if (Convert.ToBoolean(rootItem["Enabled"]))
+                {
+                    endpointConfiguration.Add(new StorageEndpointConfiguration()
+                    {
+                        ConnectionString = rootItem["ConnectionString"],
+                        ConnectionType = rootItem["ConnectionType"],
+                        Enabled = Convert.ToBoolean(rootItem["Enabled"]),
+                        Name = rootItem["Name"]
+                    });
+                }
+            }
+
+            return endpointConfiguration;
+        }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
@@ -164,17 +191,20 @@ namespace Syslog.Server
         {
             while (queueing)
             {
-                messageTrigger.WaitOne(10000);    // A 5000ms timeout to force processing
+                messageTrigger.WaitOne(10000);    // A 10000ms timeout to force processing
                 Message[] messageArray = null;
 
-                lock (messageQueue)
+                if (messageQueue.Count != 0)
                 {
-                    messageArray = messageQueue.ToArray();
-                }
+                    lock (messageQueue)
+                    {
+                        messageArray = messageQueue.ToArray();
+                    }
 
-                if (messageArray.Length != 0)
-                {
-                    Task.Run(() => HandleMessageProcessing(messageArray).Wait(2000));
+                    if (messageArray.Length != 0)
+                    {
+                        Task.Run(() => HandleMessageProcessing(messageArray).Wait(6000));
+                    }
                 }
             }
         }
@@ -185,8 +215,12 @@ namespace Syslog.Server
         /// <param name="messages">Array of type <see cref="Data.Message"/></param>
         private static async Task HandleMessageProcessing(Message[] messages)
         {
-            Log log = new Log();
-            await log.WriteToLog(messages, configuration.GetSection("AzureStorage:StorageConnectionString").Value);
+            if (log is null)
+            {
+                log = new Log(storageEndpointConfigurations);
+            }
+
+            await log.WriteToLog(messages);
 
             foreach (Message message in messages)
             {
