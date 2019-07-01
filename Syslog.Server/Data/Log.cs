@@ -6,20 +6,19 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using AzureStorageAdapter.Table;
+using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using Syslog.Server.Model.Configuration;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
+
 namespace Syslog.Server.Data
 {
-    using AzureStorageAdapter.Table;
-    using Microsoft.Azure.ServiceBus;
-    using Microsoft.Extensions.Configuration;
-    using Newtonsoft.Json;
-    using Syslog.Server.Model.Configuration;
-    using Syslog.Shared.Model;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Text;
-    using System.Threading.Tasks;
-
     /// <summary>
     /// Log Class
     /// </summary>
