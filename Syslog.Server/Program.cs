@@ -70,6 +70,11 @@ namespace Syslog.Server
         public static TelemetryClient telemetryClient;
 
         /// <summary>
+        /// Application Insights Telemetry Dependency Module
+        /// </summary>
+        private static DependencyTrackingTelemetryModule dependencyTrackingTelemetryModule;
+
+        /// <summary>
         /// Defines the entry point of the application.
         /// </summary>
         public static void Main()
@@ -282,6 +287,9 @@ namespace Syslog.Server
             configuration.TelemetryInitializers.Add(new HttpDependenciesParsingTelemetryInitializer());
 
             telemetryClient = new TelemetryClient();
+            
+            dependencyTrackingTelemetryModule = new DependencyTrackingTelemetryModule();
+            dependencyTrackingTelemetryModule.Initialize(TelemetryConfiguration.Active);
         }
     }
 }
