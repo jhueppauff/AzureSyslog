@@ -44,59 +44,73 @@ namespace Syslog.Server.Data
         {
             if (messages.Length != 0)
             {
-                try
+                foreach (StorageEndpointConfiguration configItem in configuration)
                 {
-                    foreach (StorageEndpointConfiguration configItem in configuration)
+                    switch (configItem.ConnectionType)
                     {
-                        switch (configItem.ConnectionType)
-                        {
-                            case "TableStorage":
-                                TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(configItem.ConnectionString);
-
-                                await tableStorageAdapter.ExcuteBatchOperationToTable(configItem.Name, messages).ConfigureAwait(false);
-                                break;
-                            case "ServiceBus":
-                                QueueClient queueClient = new QueueClient(configItem.ConnectionString, configItem.Name);
-
-                                List<Microsoft.Azure.ServiceBus.Message> serviceBusMessages = new List<Microsoft.Azure.ServiceBus.Message>();
-
-                                foreach (Syslog.Shared.Model.Message logMessage in messages)
-                                {
-                                    Microsoft.Azure.ServiceBus.Message serviceBusMessage = new Microsoft.Azure.ServiceBus.Message()
-                                    {
-                                        Body = Encoding.UTF8.GetBytes(logMessage.MessageText),
-                                        MessageId = logMessage.RowKey,
-                                        PartitionKey = logMessage.PartitionKey,
-                                    };
-
-                                    serviceBusMessage.UserProperties.Add("SourceIP", logMessage.SourceIP);
-                                    serviceBusMessage.UserProperties.Add("RecvTime", logMessage.RecvTime);
-
-                                    serviceBusMessages.Add(serviceBusMessage);
-                                }
-
-                                await queueClient.SendAsync(serviceBusMessages);
-                                break;
-                            case "LocalFile":
-                                foreach (var item in messages)
-                                {
-                                    await File.AppendAllTextAsync(configItem.ConnectionString, JsonConvert.SerializeObject(messages));
-                                }
-                                break;
-                            default:
-                                Console.ForegroundColor = ConsoleColor.Red;
-                                Console.WriteLine($"Unknow output type: {configItem.ConnectionType}. Check your appsettings");
-                                Console.ResetColor();
-                                break;
-                        }
+                        case "TableStorage":
+                            await TableOutput(messages, configItem);
+                            break;
+                        case "ServiceBus":
+                            await ServiceBusOutput(messages, configItem);
+                            break;
+                        case "LocalFile":
+                            foreach (var item in messages)
+                            {
+                                await File.AppendAllTextAsync(configItem.ConnectionString, JsonConvert.SerializeObject(messages));
+                            }
+                            break;
+                        default:
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"Unknow output type: {configItem.ConnectionType}. Check your appsettings");
+                            Console.ResetColor();
+                            break;
                     }
                 }
-                catch (Exception ex)
+            }
+        }
+
+        private static async Task ServiceBusOutput(Shared.Model.Message[] messages, StorageEndpointConfiguration configItem)
+        {
+            try
+            {
+                QueueClient queueClient = new QueueClient(configItem.ConnectionString, configItem.Name);
+
+                List<Microsoft.Azure.ServiceBus.Message> serviceBusMessages = new List<Microsoft.Azure.ServiceBus.Message>();
+
+                foreach (Syslog.Shared.Model.Message logMessage in messages)
+                {
+                    Microsoft.Azure.ServiceBus.Message serviceBusMessage = new Microsoft.Azure.ServiceBus.Message()
+                    {
+                        Body = Encoding.UTF8.GetBytes(logMessage.MessageText),
+                        MessageId = logMessage.RowKey,
+                        PartitionKey = logMessage.PartitionKey,
+                    };
+
+                    serviceBusMessage.UserProperties.Add("SourceIP", logMessage.SourceIP);
+                    serviceBusMessage.UserProperties.Add("RecvTime", logMessage.RecvTime);
+
+                    serviceBusMessages.Add(serviceBusMessage);
+                }
+
+                await queueClient.SendAsync(serviceBusMessages);
+            }
+            catch (Exception ex)
+            {
+                if (Program.telemetryClient != null)
                 {
                     Program.telemetryClient.TrackException(ex);
-                    Console.WriteLine("An error occured: " + ex.Message);
                 }
+
+                Console.WriteLine("An error occured: " + ex.Message);
             }
+        }
+
+        private static async Task TableOutput(Shared.Model.Message[] messages, StorageEndpointConfiguration configItem)
+        {
+            TableStorageAdapter tableStorageAdapter = new TableStorageAdapter(configItem.ConnectionString);
+
+            await tableStorageAdapter.ExcuteBatchOperationToTable(configItem.Name, messages).ConfigureAwait(false);
         }
     }
 }

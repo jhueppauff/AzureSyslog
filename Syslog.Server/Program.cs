@@ -8,6 +8,13 @@
 
 namespace Syslog.Server
 {
+    using Microsoft.ApplicationInsights;
+    using Microsoft.ApplicationInsights.DependencyCollector;
+    using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.Extensions.Configuration;
+    using Model.Configuration;
+    using Syslog.Server.Data;
+    using Syslog.Shared.Model;
     using System;
     using System.Collections.Generic;
     using System.Net;
@@ -15,14 +22,6 @@ namespace Syslog.Server
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Extensions.Configuration;
-    using Syslog.Server.Data;
-    using Syslog.Shared.Model;
-    using Model.Configuration;
-    using Microsoft.ApplicationInsights.Extensibility;
-    using Microsoft.ApplicationInsights.DependencyCollector;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
 
     /// <summary>
     /// Program class
@@ -68,6 +67,11 @@ namespace Syslog.Server
         /// Application Insights Telemetry Client
         /// </summary>
         public static TelemetryClient telemetryClient;
+
+        /// <summary>
+        /// Application Insights Telemetry Dependency Module
+        /// </summary>
+        private static DependencyTrackingTelemetryModule dependencyTrackingTelemetryModule;
 
         /// <summary>
         /// Defines the entry point of the application.
@@ -130,7 +134,10 @@ namespace Syslog.Server
                 }
                 catch (Exception ex)
                 {
-                    telemetryClient.TrackException(ex);
+                    if (telemetryClient != null)
+                    {
+                        telemetryClient.TrackException(ex);
+                    }
                 }
             }
         }
@@ -194,9 +201,12 @@ namespace Syslog.Server
                     udpListener.Dispose();
                 }
 
-                telemetryClient.Flush();
-                // flush is not blocking so wait a bit
-                Task.Delay(5000).Wait();
+                if (telemetryClient != null)
+                {
+                    telemetryClient.Flush();
+                    // flush is not blocking so wait a bit
+                    Task.Delay(5000).Wait();
+                }
 
                 this.disposedValue = true;
             }
@@ -212,7 +222,7 @@ namespace Syslog.Server
                 messageTrigger.WaitOne(10000);    // A 10000ms timeout to force processing
                 Message[] messageArray = null;
 
-                if (messageQueue.Count != 0)
+                if (messageQueue.Count != 0 && messageQueue.Count > 0)
                 {
                     lock (messageQueue)
                     {
@@ -246,18 +256,17 @@ namespace Syslog.Server
                 {
                     Console.WriteLine($"{DateTime.Now} : {message.MessageText}");
                 }
-                else
+
+                if (telemetryClient != null)
                 {
-                    Console.WriteLine($"{DateTime.Now} : Processed {messages.Length} messages");
+                    var metric = new Dictionary<string, double>
+                    {
+                        { "Processed Messages", messages.Length }
+                    };
+
+                    telemetryClient.TrackEvent("MessagesProcessed", null, metric);
                 }
 
-                var metric = new Dictionary<string, double>
-                {
-                    { "Processed Messages", messages.Length }
-                };
-
-                telemetryClient.TrackEvent("MessagesProcessed", null, metric);
-                
                 if (Program.messageQueue.Count != 0)
                 {
                     Program.messageQueue.Dequeue();
@@ -277,6 +286,9 @@ namespace Syslog.Server
             configuration.TelemetryInitializers.Add(new HttpDependenciesParsingTelemetryInitializer());
 
             telemetryClient = new TelemetryClient();
+
+            dependencyTrackingTelemetryModule = new DependencyTrackingTelemetryModule();
+            dependencyTrackingTelemetryModule.Initialize(TelemetryConfiguration.Active);
         }
     }
 }
