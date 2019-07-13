@@ -8,6 +8,13 @@
 
 namespace Syslog.Server
 {
+    using Microsoft.ApplicationInsights;
+    using Microsoft.ApplicationInsights.DependencyCollector;
+    using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.Extensions.Configuration;
+    using Model.Configuration;
+    using Syslog.Server.Data;
+    using Syslog.Shared.Model;
     using System;
     using System.Collections.Generic;
     using System.Net;
@@ -15,14 +22,6 @@ namespace Syslog.Server
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Extensions.Configuration;
-    using Syslog.Server.Data;
-    using Syslog.Shared.Model;
-    using Model.Configuration;
-    using Microsoft.ApplicationInsights.Extensibility;
-    using Microsoft.ApplicationInsights.DependencyCollector;
-    using Microsoft.ApplicationInsights;
-    using Microsoft.ApplicationInsights.DataContracts;
 
     /// <summary>
     /// Program class
@@ -287,7 +286,7 @@ namespace Syslog.Server
             configuration.TelemetryInitializers.Add(new HttpDependenciesParsingTelemetryInitializer());
 
             telemetryClient = new TelemetryClient();
-            
+
             dependencyTrackingTelemetryModule = new DependencyTrackingTelemetryModule();
             dependencyTrackingTelemetryModule.Initialize(TelemetryConfiguration.Active);
         }
